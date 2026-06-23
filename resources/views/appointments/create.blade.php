@@ -3,22 +3,82 @@
 @section('title', 'Agendar Cita')
 
 @section('content')
-<div class="max-w-6xl">
+<div class="max-w-8xl">
     <h1 class="text-3xl font-bold text-gray-800 mb-8">Agendar Nueva Cita</h1>
 
-    <div class="grid grid-cols-1 lg:grid-cols-2 gap-8">
-        <!-- COLUMNA IZQUIERDA: Calendario + Hora -->
-        <div class="bg-white rounded-lg shadow p-6">
+    <div class="grid grid-cols-1 lg:grid-cols-3 gap-8">
+    {{-- PRIMER CONTAINER: Seleccionar / Crear Cliente --}}
+    <div class="bg-white rounded-lg shadow p-6">
+        <h3 class="text-xl font-bold text-gray-800 mb-4">Seleccionar Cliente</h3>
+
+        <input type="hidden" id="client_id" name="client_id" value="">
+
+        <div class="space-y-4">
+            {{-- Cliente seleccionado --}}
+            <div id="cliente-seleccionado" class="hidden border border-amber-200 bg-amber-50 rounded-lg px-4 py-3">
+                <div class="flex items-center justify-between">
+                    <div class="flex items-center gap-3">
+                        <div id="sel-iniciales" class="w-8 h-8 rounded-full bg-amber-200 text-amber-800 flex items-center justify-center text-xs font-bold flex-shrink-0"></div>
+                        <div id="sel-nombre" class="text-sm font-bold text-gray-800"></div>
+                    </div>
+                    <button type="button" onclick="limpiarCliente()" class="text-xs text-gray-400 hover:text-red-500 transition">× Cambiar</button>
+                </div>
+            </div>
+
+            {{-- Búsqueda + lista --}}
+            <input type="text" id="buscar-cliente-cita" placeholder="Buscar cliente..."
+                class="w-full border border-gray-300 rounded-lg px-4 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+
+            <div id="lista-clientes-cita" class="hidden border border-gray-200 rounded-lg divide-y divide-gray-100 max-h-48 overflow-y-auto">
+                @forelse($clientes as $cliente)
+                    @php
+                        $p = explode(' ', trim($cliente->name));
+                        $ini = strtoupper(substr($p[0],0,1).(isset($p[1])?substr($p[1],0,1):''));
+                    @endphp
+                    <div class="cliente-cita-item flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 cursor-pointer transition"
+                         data-id="{{ $cliente->id }}"
+                         data-nombre="{{ $cliente->name }}"
+                         data-iniciales="{{ $ini }}"
+                         data-search="{{ strtolower($cliente->name) }}">
+                        <div class="w-7 h-7 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0">{{ $ini }}</div>
+                        <div>
+                            <div class="text-sm font-semibold text-gray-800">{{ $cliente->name }}</div>
+                            <div class="text-xs text-gray-400">{{ $cliente->email }}</div>
+                        </div>
+                    </div>
+                @empty
+                    <div class="px-4 py-4 text-center text-gray-400 text-sm">No hay clientes</div>
+                @endforelse
+            </div>
+
+            {{-- Nuevo cliente rápido --}}
+            <div class="border-t border-gray-100 pt-4 space-y-2">
+                <p class="text-sm font-semibold text-gray-700">+ Nuevo Cliente</p>
+                <input type="text" id="nuevo-nombre" placeholder="Nombre completo"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+                <input type="email" id="nuevo-email" placeholder="Email"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+                <input type="text" id="nuevo-phone" placeholder="Teléfono (opcional)"
+                    class="w-full border border-gray-300 rounded-lg px-3 py-2 text-sm focus:outline-none focus:ring-2 focus:ring-yellow-500"/>
+                <button type="button" onclick="crearCliente()"
+                    class="w-full bg-gray-800 hover:bg-gray-700 text-white text-sm font-semibold py-2 rounded-lg transition">
+                    Registrar y Seleccionar
+                </button>
+                <p id="nuevo-error" class="text-xs text-red-500 hidden"></p>
+            </div>
+        </div>
+    </div>
+
+    <!-- Fecha y Hora -->
+    <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">Selecciona Fecha y Hora</h3>
-            
+
             <form id="appointmentForm" class="space-y-6">
-                <!-- CALENDARIO -->
                 <div>
                     <label class="block text-gray-700 font-semibold mb-2">Fecha</label>
                     <input type="date" id="date" name="date" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" min="{{ date('Y-m-d') }}">
                 </div>
 
-                <!-- HORA, MINUTOS, AM/PM -->
                 <div class="grid grid-cols-3 gap-4">
                     <div>
                         <label class="block text-gray-700 font-semibold mb-2">Horas</label>
@@ -29,7 +89,6 @@
                             @endfor
                         </select>
                     </div>
-
                     <div>
                         <label class="block text-gray-700 font-semibold mb-2">Minutos</label>
                         <select id="minute" name="minute" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500">
@@ -39,7 +98,6 @@
                             @endfor
                         </select>
                     </div>
-
                     <div>
                         <label class="block text-gray-700 font-semibold mb-2">Período</label>
                         <select id="period" name="period" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
@@ -48,16 +106,28 @@
                             <option value="PM">PM</option>
                         </select>
                     </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Método de pago</label>
+                        <select id="payment_method" name="payment_method" required class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500">
+                            <option value="">Selecciona</option>
+                            <option value="Efectivo">Efectivo</option>
+                            <option value="Tarjeta">Tarjeta</option>
+                            <option value="Transferencia">Transferencia</option>
+                        </select>
+                    </div>
+                    <div>
+                        <label class="block text-gray-700 font-semibold mb-2">Propina</label>
+                        <input type="text" id="tip" name="tip" class="w-full px-3 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" placeholder="Ingresa la propina (opcional)">
+                    </div>
                 </div>
             </form>
         </div>
 
-        <!-- COLUMNA DERECHA: Servicios + Barberos -->
-        <div class="bg-white rounded-lg shadow p-6">
+    <!-- Servicios + Barberos -->
+    <div class="bg-white rounded-lg shadow p-6">
             <h3 class="text-xl font-bold text-gray-800 mb-4">Selecciona Servicio y Barbero</h3>
 
             <div class="space-y-6">
-                <!-- SERVICIOS -->
                 <div>
                     <label class="block text-gray-700 font-semibold mb-3">Tipo de Servicio</label>
                     <select id="service_id" name="service_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-blue-500" onchange="checkFormValidity()">
@@ -67,8 +137,6 @@
                         @endforeach
                     </select>
                 </div>
-
-                <!-- BARBEROS (Dinámicos) -->
                 <div>
                     <label class="block text-gray-700 font-semibold mb-3">Selecciona Barbero</label>
                     <select id="barber_id" name="barber_id" required class="w-full px-4 py-2 border border-gray-300 rounded-lg focus:outline-none focus:ring-2 focus:ring-yellow-500" onchange="checkFormValidity()">
@@ -78,8 +146,6 @@
                         @endforeach
                     </select>
                 </div>
-
-                <!-- BOTÓN RESERVAR -->
                 <button id="submitBtn" type="submit" form="appointmentForm" class="w-full bg-yellow-500 hover:bg-yellow-600 disabled:bg-gray-400 text-white font-bold py-3 px-4 rounded-lg transition cursor-not-allowed" disabled onclick="submitAppointment(event)">
                     Reservar
                 </button>
@@ -89,68 +155,170 @@
 </div>
 
 <script>
-// Validar campos y habilitar botón "Reservar"
 function checkFormValidity() {
-    const date = document.getElementById('date').value;
-    const hour = document.getElementById('hour').value;
-    const minute = document.getElementById('minute').value;
-    const period = document.getElementById('period').value;
+    const date     = document.getElementById('date').value;
+    const hour     = document.getElementById('hour').value;
+    const minute   = document.getElementById('minute').value;
+    const period   = document.getElementById('period').value;
     const serviceId = document.getElementById('service_id').value;
-    const barberId = document.getElementById('barber_id').value;
+    const barberId  = document.getElementById('barber_id').value;
+    const clientId  = document.getElementById('client_id').value;
 
-    const isValid = date && hour && minute !== '' && period && serviceId && barberId;
-    
+    const isValid = date && hour && minute !== '' && period && serviceId && barberId && clientId;
+
     const submitBtn = document.getElementById('submitBtn');
     submitBtn.disabled = !isValid;
     submitBtn.classList.toggle('cursor-not-allowed', !isValid);
     submitBtn.classList.toggle('cursor-pointer', isValid);
 }
 
-// Monitorear cambios en los campos
 document.getElementById('date').addEventListener('change', checkFormValidity);
 document.getElementById('hour').addEventListener('change', checkFormValidity);
 document.getElementById('minute').addEventListener('change', checkFormValidity);
 document.getElementById('period').addEventListener('change', checkFormValidity);
 document.getElementById('service_id').addEventListener('change', checkFormValidity);
 
-// Enviar formulario
+// Seleccionar cliente de la lista
+document.querySelectorAll('.cliente-cita-item').forEach(function(el) {
+    el.addEventListener('click', function() {
+        seleccionarCliente(this.dataset.id, this.dataset.nombre, this.dataset.iniciales);
+        document.querySelectorAll('.cliente-cita-item').forEach(e => e.classList.remove('bg-amber-100'));
+        this.classList.add('bg-amber-100');
+    });
+});
+
+function seleccionarCliente(id, nombre, iniciales) {
+    document.getElementById('client_id').value = id;
+    document.getElementById('sel-iniciales').textContent = iniciales;
+    document.getElementById('sel-nombre').textContent = nombre;
+    document.getElementById('cliente-seleccionado').classList.remove('hidden');
+    checkFormValidity();
+}
+
+function limpiarCliente() {
+    document.getElementById('client_id').value = '';
+    document.getElementById('cliente-seleccionado').classList.add('hidden');
+    document.querySelectorAll('.cliente-cita-item').forEach(e => e.classList.remove('bg-amber-100'));
+    checkFormValidity();
+}
+
+// Buscar cliente en lista
+document.getElementById('buscar-cliente-cita').addEventListener('input', function() {
+    const q = this.value.toLowerCase().trim();
+    const lista = document.getElementById('lista-clientes-cita');
+
+    if (!q) {
+        lista.classList.add('hidden');
+        return;
+    }
+
+    let hayResultados = false;
+    document.querySelectorAll('.cliente-cita-item').forEach(function(el) {
+        const match = el.dataset.search.includes(q);
+        el.style.display = match ? '' : 'none';
+        if (match) hayResultados = true;
+    });
+
+    lista.classList.toggle('hidden', !hayResultados);
+});
+
+document.getElementById('buscar-cliente-cita').addEventListener('blur', function() {
+    setTimeout(() => document.getElementById('lista-clientes-cita').classList.add('hidden'), 150);
+});
+
+document.getElementById('buscar-cliente-cita').addEventListener('focus', function() {
+    if (this.value.trim()) document.getElementById('lista-clientes-cita').classList.remove('hidden');
+});
+
+// Crear cliente rápido vía AJAX
+function crearCliente() {
+    const nombre = document.getElementById('nuevo-nombre').value.trim();
+    const email  = document.getElementById('nuevo-email').value.trim();
+    const phone  = document.getElementById('nuevo-phone').value.trim();
+    const err    = document.getElementById('nuevo-error');
+
+    if (!nombre || !email) {
+        err.textContent = 'Nombre y email son requeridos.';
+        err.classList.remove('hidden');
+        return;
+    }
+
+    fetch('{{ route("clientes.quickStore") }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ name: nombre, email: email, phone: phone }),
+    })
+    .then(r => r.json())
+    .then(data => {
+        if (data.success) {
+            err.classList.add('hidden');
+            const c = data.client;
+            const p = c.name.split(' ');
+            const ini = (p[0][0] + (p[1] ? p[1][0] : '')).toUpperCase();
+
+            // Agregar a lista
+            const lista = document.getElementById('lista-clientes-cita');
+            const div = document.createElement('div');
+            div.className = 'cliente-cita-item flex items-center gap-3 px-4 py-2.5 hover:bg-amber-50 cursor-pointer transition bg-amber-100';
+            div.dataset.id = c.id;
+            div.dataset.nombre = c.name;
+            div.dataset.iniciales = ini;
+            div.dataset.search = c.name.toLowerCase();
+            div.innerHTML = `<div class="w-8 h-8 rounded-full bg-amber-100 text-amber-700 flex items-center justify-center text-xs font-bold flex-shrink-0">${ini}</div><div><div class="text-sm font-semibold text-gray-800">${c.name}</div><div class="text-xs text-gray-400">${c.email}</div></div>`;
+            div.addEventListener('click', function() {
+                seleccionarCliente(this.dataset.id, this.dataset.nombre, this.dataset.iniciales);
+                document.querySelectorAll('.cliente-cita-item').forEach(e => e.classList.remove('bg-amber-100'));
+                this.classList.add('bg-amber-100');
+            });
+            lista.prepend(div);
+
+            seleccionarCliente(c.id, c.name, ini);
+            document.getElementById('nuevo-nombre').value = '';
+            document.getElementById('nuevo-email').value = '';
+            document.getElementById('nuevo-phone').value = '';
+        } else {
+            err.textContent = data.message || 'Error al crear cliente.';
+            err.classList.remove('hidden');
+        }
+    })
+    .catch(() => {
+        err.textContent = 'Error de conexión.';
+        err.classList.remove('hidden');
+    });
+}
+
 function submitAppointment(event) {
     event.preventDefault();
 
     const formData = {
-        date: document.getElementById('date').value,
-        hour: document.getElementById('hour').value,
-        minute: document.getElementById('minute').value,
-        period: document.getElementById('period').value,
+        date:       document.getElementById('date').value,
+        hour:       document.getElementById('hour').value,
+        minute:     document.getElementById('minute').value,
+        period:     document.getElementById('period').value,
         service_id: document.getElementById('service_id').value,
-        barber_id: document.getElementById('barber_id').value,
+        barber_id:  document.getElementById('barber_id').value,
+        client_id:  document.getElementById('client_id').value,
     };
 
     fetch('{{ route("appointments.store") }}', {
         method: 'POST',
-        headers: {
-            'Content-Type': 'application/json',
-            'X-CSRF-TOKEN': '{{ csrf_token() }}',
-        },
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
         body: JSON.stringify(formData),
     })
-    .then(response => response.json())
+    .then(r => r.json())
     .then(data => {
         if (data.success) {
             alert('¡Cita reservada exitosamente!');
             document.getElementById('appointmentForm').reset();
+            limpiarCliente();
             checkFormValidity();
         } else {
             alert('Error: ' + data.message);
         }
     })
-    .catch(error => {
-        console.error('Error:', error);
-        alert('Ocurrió un error al guardar la cita');
-    });
+    .catch(() => alert('Ocurrió un error al guardar la cita'));
 }
 
-// Inicializar validación
 checkFormValidity();
 </script>
 @endsection

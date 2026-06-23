@@ -17,6 +17,8 @@ class BarberSeeder extends Seeder
         $barbers = [
             ['name' => 'Charly Martínez', 'email' => 'charly0620@barbershop.com', 'password' => 'Charly123'],
             ['name' => 'Manuel Rubio', 'email' => 'manny007@barbershop.com', 'password' => 'Manuel123'],
+            ['name' => 'Carlos López', 'email' => 'test@example.com', 'password' => '12345678'],
+
         ];
 
         foreach ($barbers as $barberData) {

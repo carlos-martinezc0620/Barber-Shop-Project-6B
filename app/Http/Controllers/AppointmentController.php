@@ -5,6 +5,7 @@ namespace App\Http\Controllers;
 use App\Models\Appointment;
 use App\Models\Barber;
 use App\Models\Service;
+use App\Models\User;
 use Illuminate\Http\Request;
 use Illuminate\Http\JsonResponse;
 use Carbon\Carbon;
@@ -14,23 +15,24 @@ class AppointmentController extends Controller
     public function create()
     {
         $services = Service::all();
-        $barbers = Barber::with('user')->get();
+        $barbers  = Barber::with('user')->get();
+        $clientes = User::where('role', 'user')->orderBy('name')->get();
 
-        return view('appointments.create', [
-            'services' => $services,
-            'barbers' => $barbers,
-        ]);
+        return view('appointments.create', compact('services', 'barbers', 'clientes'));
     }
 
     public function store (Request $request): JsonResponse
     {
         $validated = $request->validate([
-            'date' => 'required|date|after_or_equal:today',
-            'hour' => 'required|integer|between:1,12',
-            'minute' => 'required|integer|between:0,59',
-            'period' => 'required|in:AM,PM',
-            'service_id' => 'required|exists:services,id',
-            'barber_id' => 'required|exists:users,id',
+            'date'           => 'required|date|after_or_equal:today',
+            'hour'           => 'required|integer|between:1,12',
+            'minute'         => 'required|integer|between:0,59',
+            'period'         => 'required|in:AM,PM',
+            'service_id'     => 'required|exists:services,id',
+            'barber_id'      => 'required|exists:users,id',
+            'client_id'      => 'required|exists:users,id',
+            'payment_method' => 'nullable|in:Efectivo,Tarjeta,Transferencia',
+            'tip'            => 'nullable|numeric|min:0',
         ]);
 
         // Formato de 24 horas
@@ -47,11 +49,13 @@ class AppointmentController extends Controller
         );
 
         $appointment = Appointment::create([
-            'client_id' => auth()->id(),
-            'barber_id' => $validated['barber_id'],
-            'service_id' => $validated['service_id'],
+            'client_id'      => $validated['client_id'],
+            'barber_id'      => $validated['barber_id'],
+            'service_id'     => $validated['service_id'],
             'appointment_date' => $appointmentDate,
-            'status' => 'pending',
+            'status'         => 'pending',
+            'payment_method' => $validated['payment_method'] ?? null,
+            'tip'            => $validated['tip'] ?? 0,
         ]);
 
         return response()->json([

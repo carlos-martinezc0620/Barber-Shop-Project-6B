@@ -23,6 +23,12 @@
                 <a href="{{ route('appointments.create') }}" class="block px-4 py-3 rounded-lg {{ request()->routeIs('appointments.create') ? 'bg-gray-800 text-white' : 'text-black hover:bg-gray-100' }}">
                     Agendar Cita
                 </a>
+                 <a href="{{ route('registros.index') }}" class="block px-4 py-3 rounded-lg {{ request()->routeIs('registros.index') ? 'bg-gray-800 text-white' : 'text-black hover:bg-gray-100' }}">
+                    Registrar Cobros
+                </a>
+                <a href="{{ route('clientes.index') }}" class="block px-4 py-3 rounded-lg {{ request()->routeIs('clientes.index') ? 'bg-gray-800 text-white' : 'text-black hover:bg-gray-100' }}">
+                    Gestión de Clientes
+                </a>
             </nav>
 
             <div class="mt-12 pt-6 border-t border-gray-200">
