@@ -30,6 +30,8 @@ Route::middleware('auth')->group(function () {
 
     Route::get('/registros', [RegistrosController::class, 'index'])->name('registros.index');
     Route::get('/registros/export', [RegistrosController::class, 'export'])->name('registros.export');
+    Route::put('/registros/{appointment}', [RegistrosController::class, 'update'])->name('registros.update');
+    Route::delete('/registros/{appointment}', [RegistrosController::class, 'destroy'])->name('registros.destroy');
     Route::get('/clientes', [ClienteController::class, 'index'])->name('clientes.index');
     Route::post('/clientes', [ClienteController::class, 'store'])->name('clientes.store');
     Route::post('/clientes/quick', [ClienteController::class, 'quickStore'])->name('clientes.quickStore');

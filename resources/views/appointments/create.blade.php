@@ -154,6 +154,7 @@
     </div>
 </div>
 
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
 <script>
 function checkFormValidity() {
     const date     = document.getElementById('date').value;
@@ -291,13 +292,15 @@ function submitAppointment(event) {
     event.preventDefault();
 
     const formData = {
-        date:       document.getElementById('date').value,
-        hour:       document.getElementById('hour').value,
-        minute:     document.getElementById('minute').value,
-        period:     document.getElementById('period').value,
-        service_id: document.getElementById('service_id').value,
-        barber_id:  document.getElementById('barber_id').value,
-        client_id:  document.getElementById('client_id').value,
+        date:           document.getElementById('date').value,
+        hour:           document.getElementById('hour').value,
+        minute:         document.getElementById('minute').value,
+        period:         document.getElementById('period').value,
+        service_id:     document.getElementById('service_id').value,
+        barber_id:      document.getElementById('barber_id').value,
+        client_id:      document.getElementById('client_id').value,
+        payment_method: document.getElementById('payment_method').value,
+        tip:            document.getElementById('tip').value,
     };
 
     fetch('{{ route("appointments.store") }}', {
@@ -308,15 +311,27 @@ function submitAppointment(event) {
     .then(r => r.json())
     .then(data => {
         if (data.success) {
-            alert('¡Cita reservada exitosamente!');
-            document.getElementById('appointmentForm').reset();
-            limpiarCliente();
-            checkFormValidity();
+            Swal.fire({
+                title: '¡Cita agendada!',
+                text: 'La cita fue reservada exitosamente.',
+                icon: 'success',
+                confirmButtonColor: '#f59e0b',
+                confirmButtonText: 'Aceptar',
+            }).then(() => {
+                document.getElementById('appointmentForm').reset();
+                limpiarCliente();
+                checkFormValidity();
+            });
         } else {
-            alert('Error: ' + data.message);
+            Swal.fire({
+                title: 'Error',
+                text: data.message || 'No se pudo agendar la cita.',
+                icon: 'error',
+                confirmButtonColor: '#ef4444',
+            });
         }
     })
-    .catch(() => alert('Ocurrió un error al guardar la cita'));
+    .catch(() => Swal.fire({ title: 'Error', text: 'Error de conexión.', icon: 'error' }));
 }
 
 checkFormValidity();

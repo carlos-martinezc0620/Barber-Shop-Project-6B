@@ -108,6 +108,7 @@
                     <th class="px-5 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Total</th>
                     <th class="px-5 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Comisión</th>
                     <th class="px-5 py-3 text-right text-xs font-semibold text-gray-600 uppercase tracking-wide">Barbero</th>
+                    <th class="px-5 py-3 text-center text-xs font-semibold text-gray-600 uppercase tracking-wide">Acciones</th>
                 </tr>
             </thead>
             <tbody>
@@ -129,14 +130,136 @@
                         <td class="px-5 py-3 text-sm text-gray-800 text-right">${{ number_format($precio, 2) }}</td>
                         <td class="px-5 py-3 text-sm text-amber-500 font-medium text-right">${{ number_format($comision, 2) }}</td>
                         <td class="px-5 py-3 text-sm text-gray-700 text-right">${{ number_format($ganancia, 2) }}</td>
+                        <td class="px-5 py-3 text-center">
+                            <div class="flex items-center justify-center gap-2">
+                                <button onclick="abrirEditar({{ $appointment->id }}, '{{ $appointment->appointment_date->format('Y-m-d\TH:i') }}', {{ $appointment->service_id }}, {{ $appointment->barber_id }}, '{{ $appointment->payment_method }}', '{{ $appointment->status }}')"
+                                    class="text-xs border border-gray-200 text-gray-600 px-3 py-1 rounded-lg hover:bg-gray-50 transition">
+                                    Editar
+                                </button>
+                                <button onclick="confirmarEliminar({{ $appointment->id }})"
+                                    class="text-xs border border-red-200 text-red-500 px-3 py-1 rounded-lg hover:bg-red-50 transition">
+                                    Eliminar
+                                </button>
+                            </div>
+                        </td>
                     </tr>
                 @empty
                     <tr>
-                        <td colspan="8" class="px-5 py-8 text-center text-gray-400 text-sm">No hay registros</td>
+                        <td colspan="9" class="px-5 py-8 text-center text-gray-400 text-sm">No hay registros</td>
                     </tr>
                 @endforelse
             </tbody>
         </table>
     </div>
 </div>
+{{-- Modal Editar --}}
+<div id="modal-editar" class="hidden fixed inset-0 bg-black bg-opacity-40 flex items-center justify-center z-50">
+    <div class="bg-white rounded-xl shadow-xl w-full max-w-md p-6">
+        <div class="flex justify-between items-center mb-5">
+            <h2 class="text-lg font-bold text-gray-800">Editar Registro</h2>
+            <button onclick="document.getElementById('modal-editar').classList.add('hidden')" class="text-gray-400 hover:text-gray-600 text-xl font-bold">&times;</button>
+        </div>
+        <form id="form-editar" method="POST">
+            @csrf
+            @method('PUT')
+            <div class="space-y-4">
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Fecha y Hora</label>
+                    <input type="datetime-local" name="appointment_date" id="edit-fecha"
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300"/>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Servicio</label>
+                    <select name="service_id" id="edit-service"
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        @foreach($services as $s)
+                            <option value="{{ $s->id }}">{{ $s->name }} — ${{ number_format($s->price,2) }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Barbero</label>
+                    <select name="barber_id" id="edit-barber"
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        @foreach($barbers as $b)
+                            <option value="{{ $b->user_id }}">{{ $b->user->name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Método de Pago</label>
+                    <select name="payment_method" id="edit-metodo"
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        <option value="">— Sin especificar —</option>
+                        <option value="Efectivo">Efectivo</option>
+                        <option value="Tarjeta">Tarjeta</option>
+                        <option value="Transferencia">Transferencia</option>
+                    </select>
+                </div>
+                <div>
+                    <label class="block text-xs font-medium text-gray-600 mb-1">Estado</label>
+                    <select name="status" id="edit-status"
+                        class="w-full border border-gray-200 rounded-lg px-4 py-2.5 text-sm focus:outline-none focus:ring-2 focus:ring-amber-300">
+                        <option value="pending">Pendiente</option>
+                        <option value="confirmed">Confirmado</option>
+                        <option value="completed">Completado</option>
+                        <option value="cancelled">Cancelado</option>
+                    </select>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button type="button" onclick="document.getElementById('modal-editar').classList.add('hidden')"
+                    class="flex-1 border border-gray-200 text-gray-600 py-2.5 rounded-lg text-sm hover:bg-gray-50 transition">
+                    Cancelar
+                </button>
+                <button type="submit"
+                    class="flex-1 bg-gray-900 hover:bg-gray-700 text-white py-2.5 rounded-lg text-sm font-semibold transition">
+                    Guardar Cambios
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
+{{-- Form eliminar oculto --}}
+<form id="form-eliminar" method="POST" class="hidden">
+    @csrf
+    @method('DELETE')
+</form>
+
+<script src="https://cdn.jsdelivr.net/npm/sweetalert2@11"></script>
+<script>
+    function abrirEditar(id, fecha, serviceId, barberId, metodo, status) {
+        document.getElementById('form-editar').action = '/registros/' + id;
+        document.getElementById('edit-fecha').value   = fecha;
+        document.getElementById('edit-service').value = serviceId;
+        document.getElementById('edit-barber').value  = barberId;
+        document.getElementById('edit-metodo').value  = metodo || '';
+        document.getElementById('edit-status').value  = status;
+        document.getElementById('modal-editar').classList.remove('hidden');
+    }
+
+    function confirmarEliminar(id) {
+        Swal.fire({
+            title: '¿Estás seguro?',
+            text: 'Esta acción eliminará el registro permanentemente.',
+            icon: 'warning',
+            showCancelButton: true,
+            confirmButtonColor: '#ef4444',
+            cancelButtonColor: '#6b7280',
+            confirmButtonText: 'Sí, eliminar',
+            cancelButtonText: 'Cancelar',
+        }).then((result) => {
+            if (result.isConfirmed) {
+                const form = document.getElementById('form-eliminar');
+                form.action = '/registros/' + id;
+                form.submit();
+            }
+        });
+    }
+
+    document.getElementById('modal-editar').addEventListener('click', function(e) {
+        if (e.target === this) this.classList.add('hidden');
+    });
+</script>
 @endsection
