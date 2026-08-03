@@ -4,6 +4,7 @@ namespace App\Http\Controllers;
 
 use App\Models\Appointment;
 use App\Models\Barber;
+use App\Models\Service;
 use Carbon\Carbon;
 use Illuminate\View\View;
 
@@ -13,7 +14,10 @@ class DashboardController extends Controller
     {
         // Esta declaración obtiene los barberos que se hayan registrado
         $barbers = Barber::with('user')->get();
-        
+
+        // Esta declaración obtiene los servicios disponibles
+        $services = Service::all();
+
         // Esta declaración obtiene las citas del mes actual
         $now = Carbon::now();
         $selectedBarberId = request('barber_id');
@@ -30,6 +34,7 @@ class DashboardController extends Controller
 
         return view('dashboard.index', [
             'barbers' => $barbers,
+            'services' => $services,
             'todaysAppointments' => $todaysAppointments,
             'selectedBarberId' => $selectedBarberId,
         ]);
